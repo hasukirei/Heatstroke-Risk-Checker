@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>熱中症危険度チェッカー</title>
+    <style>
+        body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #e53935; }
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        h2 { font-size: 1.2em; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 0; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="number"], select { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .conditional-input { display: none; background-color: #e3f2fd; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+        .conditional-label { font-size: 0.9em; font-weight: normal; color: #555; }
+        .checkbox-group label { font-weight: normal; display: flex; align-items: center; margin-bottom: 5px; cursor: pointer; }
+        .checkbox-group input { margin-right: 10px; }
+        .main-btn { width: 100%; padding: 15px; background-color: #1976d2; color: white; border: none; border-radius: 5px; font-size: 1.1em; cursor: pointer; transition: background 0.3s; }
+        .main-btn:hover { background-color: #1565c0; }
+        #resultArea, #reportArea { display: none; margin-top: 20px; padding: 20px; border-radius: 5px; text-align: center; }
+        .risk-level { font-size: 1.5em; font-weight: bold; margin: 10px 0; line-height: 1.4; }
+        .advice { font-size: 1.1em; margin-top: 10px; text-align: left; background: rgba(255,255,255,0.7); padding: 10px; border-radius: 5px; }
+        .level-safe { background-color: #e8f5e9; color: #2e7d32; border: 2px solid #2e7d32; }
+        .level-caution { background-color: #fffde7; color: #f9a825; border: 2px solid #f9a825; }
+        .level-danger { background-color: #ffebee; color: #c62828; border: 2px solid #c62828; }
+        .level-emergency { background-color: #b71c1c; color: white; border: 4px solid #ffeb3b; animation: flash 1s infinite; }
+        @keyframes flash { 0% { border-color: #ffeb3b; } 50% { border-color: red; } 100% { border-color: #ffeb3b; } }
+        .report-item { text-align: left; margin: 5px 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>☀ 熱中症危険度チェッカー</h1>
+
+    <div class="section">
+        <h2>1. 環境状況</h2>
+        <label>現在の気温 (℃)</label>
+        <input type="number" id="temperature" placeholder="例: 28">
+        
+        <label>場所</label>
+        <select id="location" onchange="toggleEnvInputs()">
+            <option value="indoor">屋内</option>
+            <option value="outdoor_sun">屋外（日向）</option>
+            <option value="outdoor_shade">屋外（日陰）</option>
+        </select>
+
+        <div id="humidityArea" class="conditional-input">
+            <label>現在の湿度 (%) <br><span class="conditional-label">※屋内は湿度が重要です</span></label>
+            <input type="number" id="humidity" placeholder="例: 70">
+        </div>
+
+        <div id="windArea" class="conditional-input">
+            <label>現在の風速 (m/s) [任意] <br><span class="conditional-label">※風があると体感温度が下がります</span></label>
+            <input type="number" id="wind" placeholder="わからなければ空欄でOK">
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>2. 身体状況 (当てはまるもの全て)</h2>
+        <div class="checkbox-group">
+            <label><input type="checkbox" class="symptom" value="1"> めまい・立ちくらみがある</label>
+            <label><input type="checkbox" class="symptom" value="2"> 大量の汗をかいている / 汗が出ない</label>
+            <label><input type="checkbox" class="symptom" value="2"> 手足のしびれ・筋肉のけいれん</label>
+            <label><input type="checkbox" class="symptom" value="3"> 頭痛・吐き気がする</label>
+            <label><input type="checkbox" class="symptom" value="3"> 体がだるい・力が入らない</label>
+            <label><input type="checkbox" class="symptom" value="5"> 呼びかけに反応しない・意識がおかしい</label>
+            <label><input type="checkbox" class="symptom" value="5"> 全身のけいれんがある</label>
+        </div>
+    </div>
+
+    <button class="main-btn" onclick="checkRisk()">危険度を判定する</button>
+
+    <div id="resultArea">
+        <div id="resultTitle">判定結果</div>
+        <div class="risk-level" id="riskText">---</div>
+        <div class="advice" id="adviceText">---</div>
+    </div>
+
+    <div id="reportArea" class="section">
+        <h2>通報時に伝える最低限情報</h2>
+        <div id="reportList"></div>
+        <p style="font-size:0.9em; color:#555;">※通報時はこのアプリの結果を信用せず、最終判断は自己責任で行ってください。</p>
+    </div>
+</div>
+
+<script>
+window.onload = function() { toggleEnvInputs(); };
+
+function toggleEnvInputs() {
+    const loc = document.getElementById('location').value;
+    document.getElementById('humidityArea').style.display = loc==='indoor' ? 'block' : 'none';
+    document.getElementById('windArea').style.display = (loc!=='indoor') ? 'block' : 'none';
+}
+
+function checkRisk() {
+    let tempInput = document.getElementById('temperature').value;
+    let temp = tempInput !== "" ? parseFloat(tempInput) : null;
+
+    let humidityInput = document.getElementById('humidity').value;
+    let humidity = humidityInput !== "" ? parseFloat(humidityInput) : null;
+
+    let windInput = document.getElementById('wind').value;
+    let wind = windInput !== "" ? parseFloat(windInput) : null;
+
+    const location = document.getElementById('location').value;
+    const checkboxes = document.querySelectorAll('.symptom:checked');
+    let symptomScore = 0;
+    let isEmergency = false;
+    let symptomList = [];
+
+    checkboxes.forEach(box => {
+        const val = parseInt(box.value);
+        symptomScore += val;
+        if(val===5) isEmergency = true;
+        symptomList.push(box.parentNode.textContent.trim());
+    });
+
+    let envRisk = 0;
+    if(temp!==null){
+        if(temp >=35) envRisk+=3;
+        else if(temp >=31) envRisk+=2;
+        else if(temp >=28) envRisk+=1;
+    }
+    if(location==='indoor' && humidity!==null){
+        if(humidity>=75) envRisk+=2;
+        else if(humidity>=60) envRisk+=1;
+    } else if(location!=='indoor'){
+        envRisk += (location==='outdoor_sun') ? 2 : 1;
+        if(wind!==null && wind>=3) envRisk = Math.max(0, envRisk-1);
+    }
+
+    let level="", message="", cssClass="";
+    if(isEmergency || symptomScore>=8){
+        level="危険度：緊急<br>重症度Ⅲ度 (重症)";
+        message="【直ちに救急車(119番)を呼んでください！】<br>・入院治療が必要な危険な状態です。<br>・意識障害や全身のけいれんが見られます。<br>・救急隊が来るまで体を冷やし続けてください。";
+        cssClass="level-emergency";
+    } else if(symptomScore>=3 || (symptomScore>=1 && envRisk>=3)){
+        level="危険度：高<br>重症度Ⅱ度 (中等症)";
+        message="【医療機関への受診を推奨します】<br>・頭痛や吐き気は、現場での処置だけでは不十分な可能性があります。<br>・涼しい場所へ移動し、自力で水分が摂れない場合はすぐに病院へ。";
+        cssClass="level-danger";
+    } else if(symptomScore>=1 || envRisk>=3){
+        level="危険度：注意<br>重症度Ⅰ度 (軽症)";
+        message="【現場での応急処置を行ってください】<br>・めまいやこむら返りなどは軽症のサインです。<br>・涼しい場所で服を緩め、冷たい水分と塩分を補給すれば回復が見込めます。";
+        cssClass="level-caution";
+    } else {
+        level="危険度：低 (安全)<br>重症度：なし";
+        message="【現在は落ち着いています】<br>・目立った症状はありません。<br>・引き続き水分補給を行い、環境が悪化しないよう注意してください。";
+        cssClass="level-safe";
+    }
+
+    const resultArea = document.getElementById('resultArea');
+    resultArea.className=""; resultArea.classList.add(cssClass);
+    resultArea.style.display="block";
+    document.getElementById('riskText').innerHTML=level;
+    document.getElementById('adviceText').innerHTML=message;
+
+    const reportItems = [
+        `危険度・重症度: ${level.replace(/<br>/g," / ")}`,
+        `気温: ${temp!==null ? temp+"℃":"不明"}`,
+        (location==='indoor') ? `湿度: ${humidity!==null ? humidity+"%":"不明"}` : `風速: ${wind!==null ? wind+" m/s":"不明"}`,
+        `症状: ${symptomList.length>0 ? symptomList.join(", ") : "なし"}`
+    ];
+
+    const reportListElem = document.getElementById('reportList');
+    reportListElem.innerHTML="";
+    reportItems.forEach(item=>{
+        const div = document.createElement('div');
+        div.className="report-item";
+        div.textContent = item;
+        reportListElem.appendChild(div);
+    });
+    document.getElementById('reportArea').style.display="block";
+}
+</script>
+</body>
+</html>
