@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>熱中症危険度チェッカー</title>
+    <title>熱中症危険度チェッカー / Heatstroke Risk Checker</title>
     <style>
         body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 560px; min-height: 20px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; z-index: 1; }
-        .main-container { max-width: 600px; margin: 0 auto; margin-top: 100px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; z-index: 1; }
-        h1 { text-align: center; color: #e53935; }
+        h1 { text-align: center; color: #e53935; padding-top: 10px; }
         .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
         h2 { font-size: 1.2em; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 0; }
         label { display: block; margin-bottom: 8px; font-weight: bold; }
@@ -19,8 +18,16 @@
         .checkbox-group input { margin-right: 10px; }
         .main-btn { width: 100%; padding: 15px; background-color: #1976d2; color: white; border: none; border-radius: 5px; font-size: 1.1em; cursor: pointer; transition: background 0.3s; }
         .main-btn:hover { background-color: #1565c0; }
-        #resultArea, #reportArea { display: none; margin-top: 20px; padding: 20px; border-radius: 5px; text-align: center; position: relative; z-index: 1; }
-        .risk-level { font-size: 1.5em; font-weight: bold; margin: 10px 0; line-height: 1.4; }
+
+        #resultArea { display: none; margin-top: 20px; padding: 20px; border-radius: 5px; text-align: center; position: relative; z-index: 1; }
+        .result-lang-btn {
+            position: absolute; top: 10px; right: 10px;
+            background: #fff; border: 2px solid #333; padding: 6px 12px;
+            border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 0.85em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .risk-level { font-size: 1.5em; font-weight: bold; margin: 10px 0; line-height: 1.4; padding-top: 15px; }
         .advice { font-size: 1.1em; margin-top: 10px; text-align: left; background: rgba(255,255,255,0.7); padding: 10px; border-radius: 5px; }
         .level-safe { background-color: #e8f5e9; color: #2e7d32; border: 2px solid #2e7d32; }
         .level-caution { background-color: #fffde7; color: #f9a825; border: 2px solid #f9a825; }
@@ -28,95 +35,177 @@
         .level-emergency { background-color: #b71c1c; color: white; border: 4px solid #ffeb3b; animation: flash 1s infinite; }
 
         @keyframes flash { 0% { border-color: #ffeb3b; } 50% { border-color: red; } 100% { border-color: #ffeb3b; } }
-
-        /* 背景点滅用 */
-        #bgFlash {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #f0f4f8;
-            z-index: 0;
-            transition: background-color 0.3s;
-        }
-        @keyframes emergency-pulse {
-            0% { background-color: #000000; }
-            50% { background-color: #ffeb3b; }
-            100% { background-color: #000000; }
-        }
-        .flashing-active {
-            animation: emergency-pulse 0.4s infinite;
-        }
+        #bgFlash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f0f4f8; z-index: 0; transition: background-color 0.3s; }
+        @keyframes emergency-pulse { 0% { background-color: #000000; } 50% { background-color: #ffeb3b; } 100% { background-color: #000000; } }
+        .flashing-active { animation: emergency-pulse 0.4s infinite; }
+        .lang-switch { position: absolute; top: 10px; right: 10px; background: #333; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; z-index: 10; }
+        #reportArea { display: none; margin-top: 20px; padding: 20px; border-radius: 5px; position: relative; z-index: 1; }
     </style>
 </head>
 <body>
 <div id="bgFlash"></div>
 
 <div class="container">
-    <h1>☀ 熱中症危険度チェッカー</h1>
+    <button class="lang-switch" onclick="toggleLanguage()" id="langBtn">English</button>
+    <h1 id="title">☀ 熱中症危険度チェッカー</h1>
 
     <div class="section">
-        <h2>1. 環境状況</h2>
-        <label>現在の気温 (℃)</label>
-        <input type="number" id="temperature" placeholder="例: 28" min="-50" max="60" step="0.1" inputmode="decimal" pattern="[0-9]*">
+        <h2 id="sec1_title">1. 環境状況</h2>
+        <label id="lbl_temp">現在の気温 (℃)</label>
+        <input type="number" id="temperature" placeholder="例: 28" min="-50" max="60" step="0.1" inputmode="decimal">
 
-        <label>場所</label>
+        <label id="lbl_loc">場所</label>
         <select id="location" onchange="toggleEnvInputs()">
-            <option value="indoor">屋内</option>
-            <option value="outdoor_sun">屋外（日向）</option>
-            <option value="outdoor_shade">屋外（日陰）</option>
+            <option value="indoor" id="opt_indoor">屋内</option>
+            <option value="outdoor_sun" id="opt_sun">屋外（日向）</option>
+            <option value="outdoor_shade" id="opt_shade">屋外（日陰）</option>
         </select>
 
         <div id="humidityArea" class="conditional-input">
-            <label>現在の湿度 (%) <br><span class="conditional-label">※屋内は湿度が重要です</span></label>
-            <input type="number" id="humidity" placeholder="例: 70" min="0" max="100" step="1" inputmode="numeric" pattern="[0-9]*">
+            <label id="lbl_humid">現在の湿度 (%)</label>
+            <input type="number" id="humidity" placeholder="例: 70" min="0" max="100" step="1" inputmode="numeric">
         </div>
 
         <div id="windArea" class="conditional-input">
-            <label>現在の風速 (m/s) [任意] <br><span class="conditional-label">※風があると体感温度が下がります</span></label>
-            <input type="number" id="wind" placeholder="わからなければ空欄でOK" min="0" step="0.1" inputmode="decimal" pattern="[0-9]*">
+            <label id="lbl_wind">現在の風速 (m/s)</label>
+            <input type="number" id="wind" placeholder="任意" min="0" step="0.1" inputmode="decimal">
         </div>
     </div>
 
     <div class="section">
-        <h2>2. 身体状況 (当てはまるもの全て)</h2>
+        <h2 id="sec2_title">2. 身体状況 (当てはまるもの全て)</h2>
         <div class="checkbox-group">
-            <label><input type="checkbox" class="symptom" value="1"> めまい・立ちくらみがある</label>
-            <label><input type="checkbox" class="symptom" value="2"> 大量の汗をかいている / 汗が出ない</label>
-            <label><input type="checkbox" class="symptom" value="2"> 手足のしびれ・筋肉のけいれん</label>
-            <label><input type="checkbox" class="symptom" value="3"> 頭痛・吐き気がする</label>
-            <label><input type="checkbox" class="symptom" value="3"> 体がだるい・力が入らない</label>
-            <label><input type="checkbox" class="symptom" value="5"> 呼びかけに反応しない・意識がおかしい</label>
-            <label><input type="checkbox" class="symptom" value="5"> 全身のけいれんがある</label>
+            <label><input type="checkbox" class="symptom" value="1"><span id="sym_1">めまい・立ちくらみがある</span></label>
+            <label><input type="checkbox" class="symptom" value="2"><span id="sym_2">大量の汗をかいている / 汗が出ない</span></label>
+            <label><input type="checkbox" class="symptom" value="2"><span id="sym_3">手足のしびれ・筋肉のけいれん</span></label>
+            <label><input type="checkbox" class="symptom" value="3"><span id="sym_4">頭痛・吐き気がする</span></label>
+            <label><input type="checkbox" class="symptom" value="3"><span id="sym_5">体がだるい・力が入らない</span></label>
+            <label><input type="checkbox" class="symptom" value="5"><span id="sym_6">呼びかけに反応しない・意識がおかしい</span></label>
+            <label><input type="checkbox" class="symptom" value="5"><span id="sym_7">全身のけいれんがある</span></label>
         </div>
     </div>
 
-    <p>
-        危険度が緊急、または重症度III (重症) の場合、画面全体が黒と黄色で点滅します。<br>事前にご注意ください。
-    </p>
-
-    <button class="main-btn" onclick="checkRisk()">危険度を判定する</button>
+    <p id="flash_warning" style="font-size:0.8em; color:#666;"></p>
+    <button class="main-btn" onclick="checkRisk()" id="btn_check">判定する</button>
 
     <div id="resultArea">
-        <div id="resultTitle">判定結果</div>
+        <button class="result-lang-btn" onclick="toggleLanguage()" id="resLangBtn">🔄 JP / 日本語</button>
+        <div id="resultTitle" style="font-weight:bold; font-size:0.9em;">判定結果</div>
         <div class="risk-level" id="riskText">---</div>
         <div class="advice" id="adviceText">---</div>
     </div>
 
     <div id="reportArea" class="section">
-        <h2>通報時に伝える最低限情報</h2>
+        <h2 id="report_title">通報用情報</h2>
         <div id="reportList"></div>
-        <p style="font-size:0.9em; color:#555;">※通報時はこのサイトの結果を信用せず、最終判断は自己責任で行ってください。</p>
+        <p id="report_note" style="font-size:0.8em; margin-top:10px;"></p>
     </div>
 
     <div class="section" style="text-align:center; margin-top:20px; font-size:0.9em; color:#555;">
-        <p>コードのコピー・ダウンロードはこちらから：<a href="https://github.com/hasukirei/Heatstroke-Risk-Checker.git" target="_blank">GitHub リポジトリ</a></p>
-        <p>ご自由にお使いください。</p>
+        <p id="footer_link"></p>
+        <p id="footer_free"></p>
     </div>
 </div>
 
 <script>
-window.onload = function() { toggleEnvInputs(); };
+let currentLang = 'ja';
+const translations = {
+    ja: {
+        title: "☀ 熱中症危険度チェッカー",
+        sec1_title: "1. 環境状況",
+        lbl_temp: "現在の気温 (℃)", ph_temp: "例: 28",
+        lbl_loc: "場所", opt_indoor: "屋内", opt_sun: "屋外（日向）", opt_shade: "屋外（日陰）",
+        lbl_humid: "現在の湿度 (%) <br><span class=\"conditional-label\">※屋内は湿度が重要です</span>", ph_humid: "例: 70",
+        lbl_wind: "現在の風速 (m/s) [任意] <br><span class=\"conditional-label\">※風があると体感温度が下がります</span>", ph_wind: "わからなければ空欄でOK",
+        sec2_title: "2. 身体状況 (当てはまるもの全て)",
+        sym_1: "めまい・立ちくらみがある", sym_2: "大量の汗をかいている / 汗が出ない", sym_3: "手足のしびれ・筋肉のけいれん",
+        sym_4: "頭痛・吐き気がする", sym_5: "体がだるい・力が入らない", sym_6: "呼びかけに反応しない・意識がおかしい", sym_7: "全身のけいれんがある",
+        flash_warning: "危険度が緊急の場合、画面全体が点滅します。",
+        btn_check: "危険度を判定する",
+        result_title: "判定結果", res_lang_btn: "🔄 English / 英語にする",
+        report_title: "通報時に伝える最低限情報",
+        report_note: "※通報時はこのサイトの結果を信用せず、最終判断は自己責任で行ってください。",
+        res_emergency_level: "危険度：緊急<br>重症度Ⅲ度 (重症)",
+        res_emergency_msg: "【直ちに救急車(119番)を呼んでください！】<br>・入院治療が必要な危険な状態です。<br>・意識障害や全身のけいれんが見られます。<br>・救急隊が来るまで体を冷やし続けてください。",
+        res_danger_level: "危険度：高<br>重症度Ⅱ度 (中等症)",
+        res_danger_msg: "【医療機関への受診を推奨します】<br>・頭痛や吐き気は、現場での処置だけでは不十分な可能性があります。<br>・涼しい場所へ移動し、自力で水分が摂れない場合はすぐに病院へ。",
+        res_caution_level: "危険度：注意<br>重症度Ⅰ度 (軽症)",
+        res_caution_msg: "【現場での応急処置を行ってください】<br>・めまいやこむら返りなどは軽症のサインです。<br>・涼しい場所で服を緩め、冷たい水分と塩分を補給すれば回復が見込めます。",
+        res_safe_level: "危険度：低 (安全)<br>重症度：なし",
+        res_safe_msg: "【現在は落ち着いています】<br>・目立った症状はありません。<br>・引き続き水分補給を行い、環境が悪化しないよう注意してください。",
+        rep_risk: "危険度", rep_temp: "気温", rep_humid: "湿度", rep_wind: "風速", rep_sym: "症状", rep_none: "なし", rep_unknown: "不明",
+        footer_link: 'コードのコピー・ダウンロードはこちらから：<a href="https://github.com/hasukirei/Heatstroke-Risk-Checker.git" target="_blank">GitHub リポジトリ</a>',
+        footer_free: "ご自由にお使いください。"
+    },
+    en: {
+        title: "☀ Heatstroke Risk Checker",
+        sec1_title: "1. Environmental Conditions",
+        lbl_temp: "Current Temp (℃)", ph_temp: "Ex: 28",
+        lbl_loc: "Location", opt_indoor: "Indoors", opt_sun: "Outdoors (Sun)", opt_shade: "Outdoors (Shade)",
+        lbl_humid: "Current Humidity (%) <br><span class=\"conditional-label\">*Humidity is critical indoors</span>", ph_humid: "Ex: 70",
+        lbl_wind: "Wind Speed (m/s) [Opt] <br><span class=\"conditional-label\">*Wind lowers perceived temperature</span>", ph_wind: "Optional",
+        sec2_title: "2. Physical Symptoms",
+        sym_1: "Dizziness", sym_2: "Profuse sweating / No sweat", sym_3: "Numbness / Muscle cramps",
+        sym_4: "Headache / Nausea", sym_5: "Fatigue / Weakness", sym_6: "Unresponsive / Altered consciousness", sym_7: "Convulsions",
+        flash_warning: "The screen flashes for Emergency level.",
+        btn_check: "Check Risk Level",
+        result_title: "Result", res_lang_btn: "🔄 🇯🇵 JP / 日本語を表示",
+        report_title: "Info for Emergency",
+        report_note: "*Final judgment is your responsibility.",
+        res_emergency_level: "Risk: Emergency<br>Severity III (Severe)",
+        res_emergency_msg: "【Call 119 immediately!】<br>・Dangerous state requiring hospitalization.<br>・Consciousness issues or convulsions.<br>・Keep cooling the body until help arrives.",
+        res_danger_level: "Risk: High<br>Severity II (Moderate)",
+        res_danger_msg: "【Visit medical institution】<br>・Headache or nausea may need professional care.<br>・Move to shade. If unable to drink, go to hospital.",
+        res_caution_level: "Risk: Caution<br>Severity I (Mild)",
+        res_caution_msg: "【Perform first aid on site】<br>・Dizziness/cramps are mild signs.<br>・Loosen clothes in shade, replenish water and salt.",
+        res_safe_level: "Risk: Low (Safe)<br>Severity: None",
+        res_safe_msg: "【Stable for now】<br>・No major symptoms.<br>・Continue hydration and monitor environment.",
+        rep_risk: "Risk", rep_temp: "Temp", rep_humid: "Humidity", rep_wind: "Wind", rep_sym: "Symptoms", rep_none: "None", rep_unknown: "Unknown",
+        footer_link: 'Get Code: <a href="https://github.com/hasukirei/Heatstroke-Risk-Checker.git" target="_blank">GitHub Repository</a>',
+        footer_free: "Feel free to use."
+    }
+};
+
+window.onload = function() { toggleEnvInputs(); applyLanguage(); };
+
+function toggleLanguage() {
+    currentLang = currentLang === 'ja' ? 'en' : 'ja';
+    document.getElementById('langBtn').textContent = currentLang === 'ja' ? 'English' : '日本語';
+    document.getElementById('resLangBtn').textContent = translations[currentLang].res_lang_btn;
+    applyLanguage();
+    if(document.getElementById('resultArea').style.display === 'block') { checkRisk(); }
+}
+
+function applyLanguage() {
+    const t = translations[currentLang];
+    document.getElementById('title').textContent = t.title;
+    document.getElementById('sec1_title').textContent = t.sec1_title;
+    document.getElementById('lbl_temp').textContent = t.lbl_temp;
+    document.getElementById('temperature').placeholder = t.ph_temp;
+    document.getElementById('lbl_loc').textContent = t.lbl_loc;
+    document.getElementById('opt_indoor').textContent = t.opt_indoor;
+    document.getElementById('opt_sun').textContent = t.opt_sun;
+    document.getElementById('opt_shade').textContent = t.opt_shade;
+    document.getElementById('lbl_humid').innerHTML = t.lbl_humid;
+    document.getElementById('humidity').placeholder = t.ph_humid;
+    document.getElementById('lbl_wind').innerHTML = t.lbl_wind;
+    document.getElementById('wind').placeholder = t.ph_wind;
+    document.getElementById('sec2_title').textContent = t.sec2_title;
+    document.getElementById('sym_1').textContent = t.sym_1;
+    document.getElementById('sym_2').textContent = t.sym_2;
+    document.getElementById('sym_3').textContent = t.sym_3;
+    document.getElementById('sym_4').textContent = t.sym_4;
+    document.getElementById('sym_5').textContent = t.sym_5;
+    document.getElementById('sym_6').textContent = t.sym_6;
+    document.getElementById('sym_7').textContent = t.sym_7;
+    document.getElementById('flash_warning').innerHTML = t.flash_warning;
+    document.getElementById('btn_check').textContent = t.btn_check;
+    document.getElementById('resultTitle').textContent = t.result_title;
+    document.getElementById('report_title').textContent = t.report_title;
+    document.getElementById('report_note').textContent = t.report_note;
+    document.getElementById('footer_link').innerHTML = t.footer_link;
+    document.getElementById('footer_free').textContent = t.footer_free;
+}
 
 function toggleEnvInputs() {
     const loc = document.getElementById('location').value;
@@ -125,37 +214,27 @@ function toggleEnvInputs() {
 }
 
 function checkRisk() {
-    let tempInput = document.getElementById('temperature').value;
-    let temp = tempInput !== "" ? parseFloat(tempInput) : null;
-
-    let humidityInput = document.getElementById('humidity').value;
-    let humidity = humidityInput !== "" ? parseFloat(humidityInput) : null;
-
-    let windInput = document.getElementById('wind').value;
-    let wind = windInput !== "" ? parseFloat(windInput) : null;
-
+    const t = translations[currentLang];
+    let temp = document.getElementById('temperature').value !== "" ? parseFloat(document.getElementById('temperature').value) : null;
+    let humidity = document.getElementById('humidity').value !== "" ? parseFloat(document.getElementById('humidity').value) : null;
+    let wind = document.getElementById('wind').value !== "" ? parseFloat(document.getElementById('wind').value) : null;
     const location = document.getElementById('location').value;
     const checkboxes = document.querySelectorAll('.symptom:checked');
-    let symptomScore = 0;
-    let isEmergency = false;
-    let symptomList = [];
+    let symptomScore = 0; let isEmergency = false; let symptomList = [];
 
     checkboxes.forEach(box => {
         const val = parseInt(box.value);
         symptomScore += val;
         if(val===5) isEmergency = true;
-        symptomList.push(box.parentNode.textContent.trim());
+        symptomList.push(box.parentElement.querySelector('span').textContent.trim());
     });
 
     let envRisk = 0;
     if(temp!==null){
-        if(temp >=35) envRisk+=3;
-        else if(temp >=31) envRisk+=2;
-        else if(temp >=28) envRisk+=1;
+        if(temp >=35) envRisk+=3; else if(temp >=31) envRisk+=2; else if(temp >=28) envRisk+=1;
     }
     if(location==='indoor' && humidity!==null){
-        if(humidity>=75) envRisk+=2;
-        else if(humidity>=60) envRisk+=1;
+        if(humidity>=75) envRisk+=2; else if(humidity>=60) envRisk+=1;
     } else if(location!=='indoor'){
         envRisk += (location==='outdoor_sun') ? 2 : 1;
         if(wind!==null && wind>=3) envRisk = Math.max(0, envRisk-1);
@@ -163,46 +242,33 @@ function checkRisk() {
 
     const resultArea = document.getElementById('resultArea');
     const bgFlash = document.getElementById('bgFlash');
-
     bgFlash.className = "";
-
     let level="", message="", cssClass="";
+
     if(isEmergency || symptomScore>=8){
-        level="危険度：緊急<br>重症度Ⅲ度 (重症)";
-        message="【直ちに救急車(119番)を呼んでください！】<br>・入院治療が必要な危険な状態です。<br>・意識障害や全身のけいれんが見られます。<br>・救急隊が来るまで体を冷やし続けてください。";
-        cssClass="level-emergency";
-        bgFlash.classList.add('flashing-active');
+        level = t.res_emergency_level; message = t.res_emergency_msg; cssClass="level-emergency"; bgFlash.classList.add('flashing-active');
     } else if(symptomScore>=3 || (symptomScore>=1 && envRisk>=3)){
-        level="危険度：高<br>重症度Ⅱ度 (中等症)";
-        message="【医療機関への受診を推奨します】<br>・頭痛や吐き気は、現場での処置だけでは不十分な可能性があります。<br>・涼しい場所へ移動し、自力で水分が摂れない場合はすぐに病院へ。";
-        cssClass="level-danger";
+        level = t.res_danger_level; message = t.res_danger_msg; cssClass="level-danger";
     } else if(symptomScore>=1 || envRisk>=3){
-        level="危険度：注意<br>重症度Ⅰ度 (軽症)";
-        message="【現場での応急処置を行ってください】<br>・めまいやこむら返りなどは軽症のサインです。<br>・涼しい場所で服を緩め、冷たい水分と塩分を補給すれば回復が見込めます。";
-        cssClass="level-caution";
+        level = t.res_caution_level; message = t.res_caution_msg; cssClass="level-caution";
     } else {
-        level="危険度：低 (安全)<br>重症度：なし";
-        message="【現在は落ち着いています】<br>・目立った症状はありません。<br>・引き続き水分補給を行い、環境が悪化しないよう注意してください。";
-        cssClass="level-safe";
+        level = t.res_safe_level; message = t.res_safe_msg; cssClass="level-safe";
     }
 
-    resultArea.className=""; resultArea.classList.add(cssClass);
-    resultArea.style.display="block";
+    resultArea.className=""; resultArea.classList.add(cssClass); resultArea.style.display="block";
     document.getElementById('riskText').innerHTML=level;
     document.getElementById('adviceText').innerHTML=message;
 
     const reportItems = [
-        `危険度・重症度: ${level.replace(/<br>/g," / ")}`,
-        `気温: ${temp!==null ? temp+"℃":"不明"}`,
-        (location==='indoor') ? `湿度: ${humidity!==null ? humidity+"%":"不明"}` : `風速: ${wind!==null ? wind+" m/s":"不明"}`,
-        `症状: ${symptomList.length>0 ? symptomList.join(", ") : "なし"}`
+        `${t.rep_risk}: ${level.replace(/<br>/g," / ")}`,
+        `${t.rep_temp}: ${temp!==null ? temp+"℃":t.rep_unknown}`,
+        (location==='indoor') ? `${t.rep_humid}: ${humidity!==null ? humidity+"%":t.rep_unknown}` : `${t.rep_wind}: ${wind!==null ? wind+" m/s":t.rep_unknown}`,
+        `${t.rep_sym}: ${symptomList.length>0 ? symptomList.join(", ") : t.rep_none}`
     ];
-
     const reportListElem = document.getElementById('reportList');
     reportListElem.innerHTML="";
     reportItems.forEach(item=>{
         const div = document.createElement('div');
-        div.className="report-item";
         div.textContent = item;
         reportListElem.appendChild(div);
     });
@@ -211,4 +277,3 @@ function checkRisk() {
 </script>
 </body>
 </html>
-
