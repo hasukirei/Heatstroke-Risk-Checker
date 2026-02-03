@@ -39,7 +39,14 @@
         @keyframes emergency-pulse { 0% { background-color: #000000; } 50% { background-color: #ffeb3b; } 100% { background-color: #000000; } }
         .flashing-active { animation: emergency-pulse 0.4s infinite; }
         .lang-switch { position: absolute; top: 10px; right: 10px; background: #333; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; z-index: 10; }
+        
         #reportArea { display: none; margin-top: 20px; padding: 20px; border-radius: 5px; position: relative; z-index: 1; }
+        
+        /* 追加したマップガイド用スタイル */
+        .map-btn { display: block; text-align: center; background: #4285F4; color: white; padding: 12px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 15px 0; }
+        .guide-box { margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px; }
+        .guide-box img { max-width: 100%; height: auto; border: 1px solid #ccc; margin: 10px 0; }
+        .plus-code-text { color: #d32f2f; font-weight: bold; background: #fffde7; padding: 5px; }
     </style>
 </head>
 <body>
@@ -98,6 +105,20 @@
     <div id="reportArea" class="section">
         <h2 id="report_title">通報用情報</h2>
         <div id="reportList"></div>
+
+        <div class="guide-box">
+            <p id="loc_guide_title" style="font-weight:bold; margin-bottom:5px;">【現在地を伝える】</p>
+            <a href="https://www.google.com/maps/search/?api=1&query=current+location" target="_blank" class="map-btn" id="btn_map_open">Googleマップで現在地を確認</a>
+            
+            <p id="txt_current_loc">現在地もしくはプラスコードを伝えてください</p>
+            
+            <p id="txt_how_address">▼現在地（住所）を知る方法</p>
+            <img src="address_guide.png" alt="Address Guide">
+
+            <p id="txt_how_plus">▼わからない場合はこちらの方法で（プラスコード）</p>
+            <img src="pluscode_guide.png" alt="Plus Code Guide">
+        </div>
+
         <p id="report_note" style="font-size:0.8em; margin-top:10px;"></p>
     </div>
 
@@ -124,7 +145,12 @@ const translations = {
         btn_check: "危険度を判定する",
         result_title: "判定結果", res_lang_btn: "🔄 English / 英語にする",
         report_title: "通報時に伝える最低限情報",
-        report_note: "※通報時はこのサイトの結果を信用せず、最終判断は自己責任で行ってください。",
+        loc_guide_title: "【現在地を伝える】",
+        btn_map_open: "Googleマップで現在地を確認",
+        txt_current_loc: "現在地もしくはプラスコードを伝えてください",
+        txt_how_address: "▼現在地（住所）を知る方法",
+        txt_how_plus: "▼住所がわからない場合はこちら（プラスコード）",
+        report_note: "※スピーカーにして地図を見ながら話してください。また、通報時はこのサイトの結果を信用せず、最終判断は自己責任で行ってください。",
         res_emergency_level: "危険度：緊急<br>重症度Ⅲ度 (重症)",
         res_emergency_msg: "【直ちに救急車(119番)を呼んでください！】<br>・入院治療が必要な危険な状態です。<br>・意識障害や全身のけいれんが見られます。<br>・救急隊が来るまで体を冷やし続けてください。",
         res_danger_level: "危険度：高<br>重症度Ⅱ度 (中等症)",
@@ -151,7 +177,12 @@ const translations = {
         btn_check: "Check Risk Level",
         result_title: "Result", res_lang_btn: "🔄 🇯🇵 JP / 日本語を表示",
         report_title: "Info for Emergency",
-        report_note: "*Final judgment is your responsibility.",
+        loc_guide_title: "[Location Guide]",
+        btn_map_open: "Check Current Location on Google Maps",
+        txt_current_loc: "Tell them your address or Plus Code.",
+        txt_how_address: "▼ How to find your address",
+        txt_how_plus: "▼ If address is unknown (Plus Code)",
+        report_note: "*Use speakerphone while looking at the map. Final judgment is your responsibility.",
         res_emergency_level: "Risk: Emergency<br>Severity III (Severe)",
         res_emergency_msg: "【Call 119 immediately!】<br>・Dangerous state requiring hospitalization.<br>・Consciousness issues or convulsions.<br>・Keep cooling the body until help arrives.",
         res_danger_level: "Risk: High<br>Severity II (Moderate)",
@@ -202,6 +233,14 @@ function applyLanguage() {
     document.getElementById('btn_check').textContent = t.btn_check;
     document.getElementById('resultTitle').textContent = t.result_title;
     document.getElementById('report_title').textContent = t.report_title;
+    
+    // 追加したマップガイド部分の翻訳適用
+    document.getElementById('loc_guide_title').textContent = t.loc_guide_title;
+    document.getElementById('btn_map_open').textContent = t.btn_map_open;
+    document.getElementById('txt_current_loc').textContent = t.txt_current_loc;
+    document.getElementById('txt_how_address').textContent = t.txt_how_address;
+    document.getElementById('txt_how_plus').textContent = t.txt_how_plus;
+
     document.getElementById('report_note').textContent = t.report_note;
     document.getElementById('footer_link').innerHTML = t.footer_link;
     document.getElementById('footer_free').textContent = t.footer_free;
