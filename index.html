@@ -42,11 +42,9 @@
         
         #reportArea { display: none; margin-top: 20px; padding: 20px; border-radius: 5px; position: relative; z-index: 1; }
         
-        /* 追加したマップガイド用スタイル */
         .map-btn { display: block; text-align: center; background: #4285F4; color: white; padding: 12px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 15px 0; }
         .guide-box { margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px; }
         .guide-box img { max-width: 100%; height: auto; border: 1px solid #ccc; margin: 10px 0; }
-        .plus-code-text { color: #d32f2f; font-weight: bold; background: #fffde7; padding: 5px; }
     </style>
 </head>
 <body>
@@ -103,19 +101,19 @@
     </div>
 
     <div id="reportArea" class="section">
-        <h2 id="report_title">通報用情報</h2>
+        <h2 id="report_title">通報時に伝える最低限情報</h2>
         <div id="reportList"></div>
 
         <div class="guide-box">
             <p id="loc_guide_title" style="font-weight:bold; margin-bottom:5px;">【現在地を伝える】</p>
-            <a href="https://www.google.com/maps/search/?api=1&query=current+location" target="_blank" class="map-btn" id="btn_map_open">Googleマップで現在地を確認</a>
+            <a href="https://www.google.com/maps?q=current+location" target="_blank" class="map-btn" id="btn_map_open">Googleマップで現在地を確認</a>
             
             <p id="txt_current_loc">現在地もしくはプラスコードを伝えてください</p>
             
             <p id="txt_how_address">▼現在地（住所）を知る方法</p>
             <img src="address_guide.png" alt="Address Guide">
 
-            <p id="txt_how_plus">▼わからない場合はこちらの方法で（プラスコード）</p>
+            <p id="txt_how_plus">▼住所がわからない場合はこちら（プラスコード）</p>
             <img src="pluscode_guide.png" alt="Plus Code Guide">
         </div>
 
@@ -151,16 +149,16 @@ const translations = {
         txt_how_address: "▼現在地（住所）を知る方法",
         txt_how_plus: "▼住所がわからない場合はこちら（プラスコード）",
         report_note: "※スピーカーにして地図を見ながら話してください。また、通報時はこのサイトの結果を信用せず、最終判断は自己責任で行ってください。",
-        res_emergency_level: "危険度：緊急<br>重症度Ⅲ度 (重症)",
-        res_emergency_msg: "【直ちに救急車(119番)を呼んでください！】<br>・入院治療が必要な危険な状態です。<br>・意識障害や全身のけいれんが見られます。<br>・救急隊が来るまで体を冷やし続けてください。",
-        res_danger_level: "危険度：高<br>重症度Ⅱ度 (中等症)",
-        res_danger_msg: "【医療機関への受診を推奨します】<br>・頭痛や吐き気は、現場での処置だけでは不十分な可能性があります。<br>・涼しい場所へ移動し、自力で水分が摂れない場合はすぐに病院へ。",
-        res_caution_level: "危険度：注意<br>重症度Ⅰ度 (軽症)",
-        res_caution_msg: "【現場での応急処置を行ってください】<br>・めまいやこむら返りなどは軽症のサインです。<br>・涼しい場所で服を緩め、冷たい水分と塩分を補給すれば回復が見込めます。",
-        res_safe_level: "危険度：低 (安全)<br>重症度：なし",
-        res_safe_msg: "【現在は落ち着いています】<br>・目立った症状はありません。<br>・引き続き水分補給を行い、環境が悪化しないよう注意してください。",
+        res_emergency_level: "危険度：緊急 / 重症度Ⅲ度",
+        res_emergency_msg: "【直ちに救急車(119番)を呼んでください！】",
+        res_danger_level: "危険度：高 / 重症度Ⅱ度",
+        res_danger_msg: "【医療機関への受診を推奨します】",
+        res_caution_level: "危険度：注意 / 重症度Ⅰ度",
+        res_caution_msg: "【現場での応急処置を行ってください】",
+        res_safe_level: "危険度：低 / 重症度：なし",
+        res_safe_msg: "【現在は落ち着いています】",
         rep_risk: "危険度", rep_temp: "気温", rep_humid: "湿度", rep_wind: "風速", rep_sym: "症状", rep_none: "なし", rep_unknown: "不明",
-        footer_link: 'コードのコピー・ダウンロードはこちらから：<a href="https://github.com/hasukirei/Heatstroke-Risk-Checker.git" target="_blank">GitHub リポジトリ</a>',
+        footer_link: 'Get Code: <a href="https://github.com/hasukirei/Heatstroke-Risk-Checker.git" target="_blank">GitHub</a>',
         footer_free: "ご自由にお使いください。"
     },
     en: {
@@ -168,31 +166,31 @@ const translations = {
         sec1_title: "1. Environmental Conditions",
         lbl_temp: "Current Temp (℃)", ph_temp: "Ex: 28",
         lbl_loc: "Location", opt_indoor: "Indoors", opt_sun: "Outdoors (Sun)", opt_shade: "Outdoors (Shade)",
-        lbl_humid: "Current Humidity (%) <br><span class=\"conditional-label\">*Humidity is critical indoors</span>", ph_humid: "Ex: 70",
-        lbl_wind: "Wind Speed (m/s) [Opt] <br><span class=\"conditional-label\">*Wind lowers perceived temperature</span>", ph_wind: "Optional",
+        lbl_humid: "Current Humidity (%)", ph_humid: "Ex: 70",
+        lbl_wind: "Wind Speed (m/s)", ph_wind: "Optional",
         sec2_title: "2. Physical Symptoms",
-        sym_1: "Dizziness", sym_2: "Profuse sweating / No sweat", sym_3: "Numbness / Muscle cramps",
-        sym_4: "Headache / Nausea", sym_5: "Fatigue / Weakness", sym_6: "Unresponsive / Altered consciousness", sym_7: "Convulsions",
-        flash_warning: "The screen flashes for Emergency level.",
+        sym_1: "Dizziness", sym_2: "Sweat issues", sym_3: "Cramps",
+        sym_4: "Headache", sym_5: "Fatigue", sym_6: "Unresponsive", sym_7: "Convulsions",
+        flash_warning: "Screen flashes for Emergency.",
         btn_check: "Check Risk Level",
-        result_title: "Result", res_lang_btn: "🔄 🇯🇵 JP / 日本語を表示",
-        report_title: "Info for Emergency",
+        result_title: "Result", res_lang_btn: "🔄 JP / 日本語",
+        report_title: "Information for 119 Call",
         loc_guide_title: "[Location Guide]",
-        btn_map_open: "Check Current Location on Google Maps",
-        txt_current_loc: "Tell them your address or Plus Code.",
-        txt_how_address: "▼ How to find your address",
-        txt_how_plus: "▼ If address is unknown (Plus Code)",
-        report_note: "*Use speakerphone while looking at the map. Final judgment is your responsibility.",
-        res_emergency_level: "Risk: Emergency<br>Severity III (Severe)",
-        res_emergency_msg: "【Call 119 immediately!】<br>・Dangerous state requiring hospitalization.<br>・Consciousness issues or convulsions.<br>・Keep cooling the body until help arrives.",
-        res_danger_level: "Risk: High<br>Severity II (Moderate)",
-        res_danger_msg: "【Visit medical institution】<br>・Headache or nausea may need professional care.<br>・Move to shade. If unable to drink, go to hospital.",
-        res_caution_level: "Risk: Caution<br>Severity I (Mild)",
-        res_caution_msg: "【Perform first aid on site】<br>・Dizziness/cramps are mild signs.<br>・Loosen clothes in shade, replenish water and salt.",
-        res_safe_level: "Risk: Low (Safe)<br>Severity: None",
-        res_safe_msg: "【Stable for now】<br>・No major symptoms.<br>・Continue hydration and monitor environment.",
+        btn_map_open: "Open Google Maps",
+        txt_current_loc: "Tell address or Plus Code.",
+        txt_how_address: "▼ How to find address",
+        txt_how_plus: "▼ If unknown (Plus Code)",
+        report_note: "*Use speakerphone. Final judgment is yours.",
+        res_emergency_level: "Risk: Emergency / Severity III",
+        res_emergency_msg: "【Call 119 immediately!】",
+        res_danger_level: "Risk: High / Severity II",
+        res_danger_msg: "【Visit medical institution】",
+        res_caution_level: "Risk: Caution / Severity I",
+        res_caution_msg: "【On-site first aid】",
+        res_safe_level: "Risk: Low / Severity: None",
+        res_safe_msg: "【Stable for now】",
         rep_risk: "Risk", rep_temp: "Temp", rep_humid: "Humidity", rep_wind: "Wind", rep_sym: "Symptoms", rep_none: "None", rep_unknown: "Unknown",
-        footer_link: 'Get Code: <a href="https://github.com/hasukirei/Heatstroke-Risk-Checker.git" target="_blank">GitHub Repository</a>',
+        footer_link: 'Get Code: <a href="https://github.com/hasukirei/Heatstroke-Risk-Checker.git" target="_blank">GitHub</a>',
         footer_free: "Feel free to use."
     }
 };
@@ -233,14 +231,11 @@ function applyLanguage() {
     document.getElementById('btn_check').textContent = t.btn_check;
     document.getElementById('resultTitle').textContent = t.result_title;
     document.getElementById('report_title').textContent = t.report_title;
-    
-    // 追加したマップガイド部分の翻訳適用
     document.getElementById('loc_guide_title').textContent = t.loc_guide_title;
     document.getElementById('btn_map_open').textContent = t.btn_map_open;
     document.getElementById('txt_current_loc').textContent = t.txt_current_loc;
     document.getElementById('txt_how_address').textContent = t.txt_how_address;
     document.getElementById('txt_how_plus').textContent = t.txt_how_plus;
-
     document.getElementById('report_note').textContent = t.report_note;
     document.getElementById('footer_link').innerHTML = t.footer_link;
     document.getElementById('footer_free').textContent = t.footer_free;
